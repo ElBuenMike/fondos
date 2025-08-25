@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería de Fondos de Pantalla</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Material Symbols -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Add padding to the bottom to prevent content from being hidden by the nav bar */
+            padding-bottom: 80px;
+        }
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+          font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for tags */
+        .tags-container::-webkit-scrollbar { height: 4px; }
+        .tags-container::-webkit-scrollbar-thumb { background-color: #4a5568; border-radius: 20px; }
+        .tags-container { scrollbar-width: thin; scrollbar-color: #4a5568 #2d3748; }
+        
+        /* Animations */
+        .modal-enter { animation: fadeIn 0.3s ease-out; }
+        .modal-leave { animation: fadeOut 0.3s ease-in; }
+        .wallpaper-item { animation: scaleIn 0.4s ease-out backwards; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.95); }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        /* Staggered animation delay */
+        .wallpaper-item:nth-child(1) { animation-delay: 0.05s; }
+        .wallpaper-item:nth-child(2) { animation-delay: 0.1s; }
+        .wallpaper-item:nth-child(3) { animation-delay: 0.15s; }
+        .wallpaper-item:nth-child(4) { animation-delay: 0.2s; }
+        .wallpaper-item:nth-child(5) { animation-delay: 0.25s; }
+        .wallpaper-item:nth-child(6) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="flex justify-between items-center mb-8">
+            <div class="text-left">
+                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Wallpapers HD</h1>
+                <p id="page-subtitle" class="text-gray-400 mt-1">Explora nuestra colección</p>
+            </div>
+            <div class="flex items-center gap-2">
+                 <input type="search" id="search-input" placeholder="Buscar..." class="w-0 bg-gray-800 border border-gray-700 rounded-full py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-in-out sm:w-48">
+                 <button id="search-btn" class="p-2 rounded-full hover:bg-gray-800 transition-colors">
+                    <span class="material-symbols-outlined">search</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Tags Filter -->
+        <div id="tags-container" class="tags-container flex items-center space-x-2 overflow-x-auto pb-4 mb-8 sticky top-0 bg-gray-900 py-4 z-10">
+            <!-- Tags will be inserted here by JavaScript -->
+        </div>
+
+        <!-- Wallpaper Grid -->
+        <div id="wallpaper-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <!-- Wallpapers will be inserted here by JavaScript -->
+        </div>
+        <div id="empty-state" class="text-center py-16 hidden">
+            <span class="material-symbols-outlined text-6xl text-gray-600">image_search</span>
+            <p class="text-gray-500 mt-4">No se encontraron resultados.</p>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-gray-800 bg-opacity-90 backdrop-blur-sm border-t border-gray-700 z-40">
+        <div class="container mx-auto flex justify-around max-w-md">
+            <button data-view="home" class="nav-btn flex flex-col items-center justify-center text-blue-400 pt-3 pb-2 w-full transition-colors">
+                <span class="material-symbols-outlined">home</span>
+                <span class="text-xs font-medium">Inicio</span>
+            </button>
+            <button data-view="favorites" class="nav-btn flex flex-col items-center justify-center text-gray-400 hover:text-white pt-3 pb-2 w-full transition-colors">
+                <span class="material-symbols-outlined">favorite</span>
+                <span class="text-xs font-medium">Favoritos</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Image Modal -->
+    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="w-full max-w-4xl max-h-[95vh] p-4 flex flex-col modal-enter">
+            <button id="close-modal-btn" class="self-end text-white bg-gray-800 rounded-full p-2 mb-2 hover:bg-gray-700 transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <div class="flex-grow flex justify-center items-center overflow-hidden">
+                <img id="modal-img" src="" alt="Wallpaper a pantalla completa" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl">
+            </div>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
+                <button id="apply-btn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">wallpaper</span>
+                    Aplicar Fondo
+                </button>
+                <a id="download-btn" href="#" download="wallpaper.jpg" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">download</span>
+                    Descargar Fondo
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Instructions Modal -->
+    <div id="instructions-modal" class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-50 hidden p-4">
+         <div class="bg-gray-800 rounded-lg p-6 max-w-lg w-full text-gray-300 relative modal-enter">
+            <h2 class="text-2xl font-bold text-white mb-4">Cómo aplicar el fondo</h2>
+            <p class="mb-6">Descarga la imagen y sigue las instrucciones para tu dispositivo:</p>
+            <div class="space-y-4 text-sm">
+                <div><h3 class="font-semibold text-white text-md mb-1">📱 Android</h3><p>Ve a <span class="font-semibold">Ajustes > Fondo de pantalla</span>, o mantén presionado en tu pantalla de inicio y selecciona "Fondos de pantalla".</p></div>
+                <div><h3 class="font-semibold text-white text-md mb-1">📱 iOS</h3><p>Ve a <span class="font-semibold">Ajustes > Fondo de pantalla > Elegir un nuevo fondo</span>.</p></div>
+                <div><h3 class="font-semibold text-white text-md mb-1">💻 Windows</h3><p>Clic derecho en el escritorio > <span class="font-semibold">Personalizar > Fondo</span>. Selecciona la imagen.</p></div>
+            </div>
+            <button id="close-instructions-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white"><span class="material-symbols-outlined">close</span></button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // =================================================================
+            // === ADMINISTRADOR DE IMÁGENES / IMAGE MANAGER ===================
+            // =================================================================
+            const wallpapers = [
+    {
+        "id": 1,
+        "src": "https://i.imgur.com/5rpGyvF.png",
+        "alt": "Auto",
+        "tags": [
+            "Autos"
+        ]
+    },
+    {
+        "id": 2,
+        "src": "https://i.imgur.com/QztlFjO.png",
+        "alt": "Goku",
+        "tags": [
+            "Dragon Ball",
+            "Goku"
+        ]
+    },
+    {
+        "id": 3,
+        "src": "https://i.imgur.com/Ymdy0wz.png",
+        "alt": "Veggeta",
+        "tags": [
+            "Dragon Ball"
+        ]
+    },
+    {
+        "id": 4,
+        "src": "https://i.imgur.com/wqG6oMc.png",
+        "alt": "Goku vs Freezer",
+        "tags": [
+            "Dragon Ball"
+        ]
+    },
+    {
+        "id": 5,
+        "src": "https://i.imgur.com/BGmR5v8.png",
+        "alt": "Gohan",
+        "tags": [
+            "Dragon Ball"
+        ]
+    },
+    {
+        "id": 6,
+        "src": "https://i.imgur.com/2a3zTqJ.png",
+        "alt": "Sasuke",
+        "tags": [
+            "Naruto"
+        ]
+    },
+    {
+        "id": 7,
+        "src": "https://i.imgur.com/ZUoY31e.png",
+        "alt": "Hitana",
+        "tags": [
+            "Naruto"
+        ]
+    }
+];
+
+            // --- DOM Elements ---
+            const dom = {
+                grid: document.getElementById('wallpaper-grid'),
+                tagsContainer: document.getElementById('tags-container'),
+                imageModal: document.getElementById('image-modal'),
+                modalImg: document.getElementById('modal-img'),
+                closeModalBtn: document.getElementById('close-modal-btn'),
+                downloadBtn: document.getElementById('download-btn'),
+                applyBtn: document.getElementById('apply-btn'),
+                instructionsModal: document.getElementById('instructions-modal'),
+                closeInstructionsBtn: document.getElementById('close-instructions-btn'),
+                navButtons: document.querySelectorAll('.nav-btn'),
+                pageSubtitle: document.getElementById('page-subtitle'),
+                searchInput: document.getElementById('search-input'),
+                searchBtn: document.getElementById('search-btn'),
+                emptyState: document.getElementById('empty-state'),
+            };
+
+            // --- App State ---
+            let state = {
+                activeTag: 'Todos',
+                currentView: 'home', // 'home' or 'favorites'
+                favorites: [],
+                searchQuery: '',
+            };
+
+            // --- Favorites Logic ---
+            const loadFavorites = () => JSON.parse(localStorage.getItem('wallpaperFavorites')) || [];
+            const saveFavorites = () => localStorage.setItem('wallpaperFavorites', JSON.stringify(state.favorites));
+
+            function toggleFavorite(id) {
+                const index = state.favorites.indexOf(id);
+                if (index > -1) {
+                    state.favorites.splice(index, 1);
+                } else {
+                    state.favorites.push(id);
+                }
+                saveFavorites();
+                render();
+            }
+
+            // --- Render Functions ---
+            function renderWallpapers(items) {
+                dom.grid.innerHTML = '';
+                if (items.length === 0) {
+                    dom.emptyState.classList.remove('hidden');
+                    return;
+                }
+                dom.emptyState.classList.add('hidden');
+
+                items.forEach(wallpaper => {
+                    const isFavorite = state.favorites.includes(wallpaper.id);
+                    const wallpaperDiv = document.createElement('div');
+                    wallpaperDiv.className = 'wallpaper-item group relative overflow-hidden rounded-lg shadow-lg cursor-pointer transition-transform transform hover:scale-105';
+                    wallpaperDiv.innerHTML = `
+                        <img src="${wallpaper.src}" alt="${wallpaper.alt}" class="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-80" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <button class="favorite-btn absolute bottom-2 right-2 p-2 rounded-full bg-black/30 backdrop-blur-sm text-white hover:text-red-500 transition-all scale-0 group-hover:scale-100" data-id="${wallpaper.id}">
+                            <span class="material-symbols-outlined ${isFavorite ? 'filled text-red-500' : ''}">favorite</span>
+                        </button>
+                    `;
+                    // ***** CORRECCIÓN AQUÍ *****
+                    // Se mueve el listener del 'click' al contenedor principal (wallpaperDiv)
+                    // para que funcione incluso con la capa de gradiente por encima.
+                    wallpaperDiv.addEventListener('click', () => openModal(wallpaper));
+                    
+                    // El listener del botón de favorito detiene la propagación para
+                    // evitar que se abra el modal al hacer clic en el corazón.
+                    wallpaperDiv.querySelector('.favorite-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleFavorite(wallpaper.id);
+                    });
+                    dom.grid.appendChild(wallpaperDiv);
+                });
+            }
+
+            function renderTags() {
+                const allTags = new Set(['Todos', ...wallpapers.flatMap(w => w.tags)]);
+                dom.tagsContainer.innerHTML = '';
+                allTags.forEach(tag => {
+                    const tagButton = document.createElement('button');
+                    tagButton.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
+                    tagButton.dataset.tag = tag;
+                    const baseClasses = 'px-4 py-2 rounded-full text-sm font-semibold transition-colors whitespace-nowrap';
+                    tagButton.className = tag === state.activeTag
+                        ? `${baseClasses} bg-blue-600 text-white`
+                        : `${baseClasses} bg-gray-700 text-gray-300 hover:bg-gray-600`;
+                    tagButton.addEventListener('click', () => {
+                        state.activeTag = tag;
+                        render();
+                    });
+                    dom.tagsContainer.appendChild(tagButton);
+                });
+            }
+
+            function updateNav() {
+                dom.navButtons.forEach(btn => {
+                    if (btn.dataset.view === state.currentView) {
+                        btn.classList.remove('text-gray-400', 'hover:text-white');
+                        btn.classList.add('text-blue-400');
+                    } else {
+                        btn.classList.remove('text-blue-400');
+                        btn.classList.add('text-gray-400', 'hover:text-white');
+                    }
+                });
+                dom.pageSubtitle.textContent = state.currentView === 'home' ? 'Explora nuestra colección' : 'Tus fondos favoritos';
+            }
+
+            // --- Main Render Function ---
+            function render() {
+                let itemsToRender = [...wallpapers];
+
+                // 1. Filter by View (Favorites)
+                if (state.currentView === 'favorites') {
+                    itemsToRender = itemsToRender.filter(w => state.favorites.includes(w.id));
+                }
+
+                // 2. Filter by Active Tag
+                if (state.activeTag !== 'Todos') {
+                    itemsToRender = itemsToRender.filter(w => w.tags.includes(state.activeTag));
+                }
+
+                // 3. Filter by Search Query
+                if (state.searchQuery) {
+                    const query = state.searchQuery.toLowerCase();
+                    itemsToRender = itemsToRender.filter(w => 
+                        w.alt.toLowerCase().includes(query) || 
+                        w.tags.some(tag => tag.toLowerCase().includes(query))
+                    );
+                }
+                
+                renderTags();
+                updateNav();
+                renderWallpapers(itemsToRender);
+            }
+
+            // --- Modal Logic ---
+            function openModal(wallpaper) {
+                dom.modalImg.src = wallpaper.src;
+                dom.modalImg.alt = wallpaper.alt;
+                dom.downloadBtn.href = wallpaper.src;
+                dom.downloadBtn.setAttribute('download', `wallpaper_${wallpaper.id}.jpg`);
+                dom.imageModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+            
+            function closeModal() {
+                const modalContent = dom.imageModal.firstElementChild;
+                modalContent.classList.add('modal-leave');
+                modalContent.classList.remove('modal-enter');
+                setTimeout(() => {
+                    dom.imageModal.classList.add('hidden');
+                    modalContent.classList.remove('modal-leave');
+                    modalContent.classList.add('modal-enter');
+                    document.body.style.overflow = 'auto';
+                }, 300);
+            }
+            
+            function showInstructions() { dom.instructionsModal.classList.remove('hidden'); }
+            function hideInstructions() { dom.instructionsModal.classList.add('hidden'); }
+
+            // --- Event Listeners ---
+            function setupEventListeners() {
+                dom.closeModalBtn.addEventListener('click', closeModal);
+                dom.applyBtn.addEventListener('click', showInstructions);
+                dom.closeInstructionsBtn.addEventListener('click', hideInstructions);
+                dom.imageModal.addEventListener('click', e => e.target === dom.imageModal && closeModal());
+                dom.instructionsModal.addEventListener('click', e => e.target === dom.instructionsModal && hideInstructions());
+                document.addEventListener('keydown', e => e.key === 'Escape' && (closeModal(), hideInstructions()));
+
+                dom.navButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        state.currentView = btn.dataset.view;
+                        state.activeTag = 'Todos'; // Reset tag filter on view change
+                        state.searchQuery = ''; // Reset search
+                        dom.searchInput.value = '';
+                        render();
+                    });
+                });
+                
+                dom.searchBtn.addEventListener('click', () => {
+                    dom.searchInput.classList.toggle('w-0');
+                    dom.searchInput.classList.toggle('w-48');
+                    dom.searchInput.focus();
+                });
+
+                dom.searchInput.addEventListener('input', (e) => {
+                    state.searchQuery = e.target.value;
+                    render();
+                });
+            }
+
+            // --- Initialization ---
+            function init() {
+                state.favorites = loadFavorites();
+                setupEventListeners();
+                render();
+            }
+
+            init();
+        });
+    </script>
+
+</body>
+</html>
